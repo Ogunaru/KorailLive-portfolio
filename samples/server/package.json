@@ -1,0 +1,14 @@
+{
+  "name": "koraillive-portfolio-mock-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Dependency-free synthetic API used by the KorailLive portfolio",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test"
+  }
+}

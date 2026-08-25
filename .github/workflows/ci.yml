@@ -1,0 +1,52 @@
+name: Portfolio CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  public-boundary:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - run: node tools/check-public-boundary.mjs
+      - run: node tools/check-local-links.mjs
+
+  node-sample:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: samples/server
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - run: npm test
+
+  swift-sample:
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: samples/ios
+    steps:
+      - uses: actions/checkout@v5
+      - run: swift test
+
+  dart-sample:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: samples/flutter
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dart-lang/setup-dart@v1
+      - run: dart pub get
+      - run: dart analyze
+      - run: dart test

@@ -1,0 +1,294 @@
+openapi: 3.1.0
+info:
+  title: KorailLive Synthetic Contract
+  version: 1.0.0
+  description: >-
+    Portfolio-only API contract backed by deterministic synthetic data. It does
+    not describe provider-specific requests or production infrastructure.
+servers:
+  - url: http://localhost:3000
+paths:
+  /health:
+    get:
+      operationId: health
+      responses:
+        '200':
+          description: Process is available
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status:
+                    const: ok
+  /stations:
+    get:
+      operationId: listStations
+      responses:
+        '200':
+          description: Versioned station collection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StationsResponse'
+  /trains:
+    get:
+      operationId: listTrainsAtStation
+      parameters:
+        - name: stationCode
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: '^\d{4}$'
+      responses:
+        '200':
+          description: Synthetic trains for one station
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrainsResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /train-location:
+    get:
+      operationId: getTrainLocation
+      parameters:
+        - $ref: '#/components/parameters/TrainNumber'
+      responses:
+        '200':
+          description: Confirmed and inferred location signals
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrainLocation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /train-schedule:
+    get:
+      operationId: getTrainSchedule
+      parameters:
+        - $ref: '#/components/parameters/TrainNumber'
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: '^\d{8}$'
+        - name: company
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [K, S]
+      responses:
+        '200':
+          description: Monotonic epoch-second schedule
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrainSchedule'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+components:
+  parameters:
+    TrainNumber:
+      name: trainNumber
+      in: query
+      required: true
+      schema:
+        type: string
+        pattern: '^\d{1,5}$'
+  responses:
+    BadRequest:
+      description: Invalid query value
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Synthetic record not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+  schemas:
+    EpochSeconds:
+      type: integer
+      format: int64
+      minimum: 0
+      description: Unix timestamp in seconds
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+    Station:
+      type: object
+      required: [code, name, line, sortOrder]
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        line:
+          type: string
+        sortOrder:
+          type: integer
+    StationsResponse:
+      type: object
+      required: [version, stations]
+      properties:
+        version:
+          type: integer
+        stations:
+          type: array
+          items:
+            $ref: '#/components/schemas/Station'
+    Train:
+      type: object
+      required:
+        - trainId
+        - trainNumber
+        - stationCode
+        - stationName
+        - destination
+        - directionCode
+        - scheduledDeparture
+        - delayMinutes
+        - status
+      properties:
+        trainId:
+          type: string
+        trainNumber:
+          type: string
+        stationCode:
+          type: string
+        stationName:
+          type: string
+        destination:
+          type: string
+        directionCode:
+          type: string
+        scheduledDeparture:
+          $ref: '#/components/schemas/EpochSeconds'
+        scheduledArrival:
+          oneOf:
+            - $ref: '#/components/schemas/EpochSeconds'
+            - type: 'null'
+        delayMinutes:
+          type: integer
+        platform:
+          oneOf:
+            - type: string
+            - type: 'null'
+        status:
+          type: string
+          enum: [boarding, running]
+    TrainsResponse:
+      type: object
+      required: [trains, fetchedAt, cache]
+      properties:
+        trains:
+          type: array
+          items:
+            $ref: '#/components/schemas/Train'
+        fetchedAt:
+          $ref: '#/components/schemas/EpochSeconds'
+        cache:
+          type: string
+          enum: [loader, cache]
+    Coordinates:
+      type: object
+      required: [latitude, longitude]
+      properties:
+        latitude:
+          type: number
+        longitude:
+          type: number
+    TrainLocation:
+      type: object
+      required:
+        - trainNumber
+        - delayMinutes
+        - departureStation
+        - arrivalStation
+      properties:
+        trainNumber:
+          type: string
+        delayMinutes:
+          type: integer
+        currentStation:
+          type: [string, 'null']
+        nextStation:
+          type: [string, 'null']
+        departureStation:
+          type: string
+        arrivalStation:
+          type: string
+        trainClassName:
+          type: [string, 'null']
+        scheduledDeparture:
+          $ref: '#/components/schemas/EpochSeconds'
+        scheduledArrival:
+          $ref: '#/components/schemas/EpochSeconds'
+        coordinates:
+          oneOf:
+            - $ref: '#/components/schemas/Coordinates'
+            - type: 'null'
+        nearestStation:
+          type: [string, 'null']
+          description: Inferred value, never a confirmed current station
+        nearestStationDistanceKm:
+          type: [number, 'null']
+    ScheduleStop:
+      type: object
+      required: [stationName, stopType]
+      properties:
+        stationName:
+          type: string
+        arrival:
+          oneOf:
+            - $ref: '#/components/schemas/EpochSeconds'
+            - type: 'null'
+        departure:
+          oneOf:
+            - $ref: '#/components/schemas/EpochSeconds'
+            - type: 'null'
+        stopType:
+          type: string
+          enum: [origin, stop, pass, terminal]
+    TrainSchedule:
+      type: object
+      required:
+        - trainNumber
+        - trainType
+        - operatingDate
+        - scheduleDelaySeconds
+        - origin
+        - destination
+        - stops
+      properties:
+        trainNumber:
+          type: string
+        trainType:
+          type: string
+        operatingDate:
+          type: string
+          pattern: '^\d{8}$'
+        scheduleDelaySeconds:
+          type: integer
+        origin:
+          type: string
+        destination:
+          type: string
+        stops:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScheduleStop'

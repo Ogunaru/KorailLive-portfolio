@@ -1,0 +1,16 @@
+.DS_Store
+.build/
+.dart_tool/
+build/
+coverage/
+node_modules/
+Package.resolved
+pubspec.lock
+*.p8
+*.p12
+*.pem
+*.jks
+*.keystore
+.env
+.env.*
+!.env.example
