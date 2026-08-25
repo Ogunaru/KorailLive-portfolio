@@ -1,5 +1,7 @@
 # KorailLive — Railway Journey Live Tracking
 
+[![Portfolio CI](https://github.com/Ogunaru/KorailLive-portfolio/actions/workflows/ci.yml/badge.svg)](https://github.com/Ogunaru/KorailLive-portfolio/actions/workflows/ci.yml)
+
 KorailLive는 열차를 선택하면 출발 시각, 지연, 타는 곳과 운행 위치를 잠금화면과 Live Activity에서 이어 보여 주는 개인 프로젝트입니다. 순수 SwiftUI iOS 앱에서 시작해 Node.js 서버와 Flutter 멀티플랫폼 앱으로 확장했습니다.
 
 > 이 저장소는 채용 검토를 위한 공개 포트폴리오 버전입니다. 운영 데이터 제공자 연동, 인증 정보, 푸시 전송 엔진과 독자적인 운영 로직은 포함하지 않으며 모든 실행 예제는 합성 데이터를 사용합니다.
